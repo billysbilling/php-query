@@ -2680,11 +2680,8 @@ class phpQueryObject implements Iterator, Countable, ArrayAccess
 
         return $this;
     }
-    // INTERFACE IMPLEMENTATIONS
 
-    // ITERATOR INTERFACE
-
-    public function rewind()
+    public function rewind(): void
     {
         $this->elementsBackup = $this->elements;
         $this->elementsInterator = $this->elements;
@@ -2692,12 +2689,12 @@ class phpQueryObject implements Iterator, Countable, ArrayAccess
         $this->current = 0;
     }
 
-    public function current()
+    public function current(): mixed
     {
         return $this->elementsInterator[$this->current];
     }
 
-    public function key()
+    public function key(): mixed
     {
         return $this->current;
     }
@@ -2712,7 +2709,7 @@ class phpQueryObject implements Iterator, Countable, ArrayAccess
      *
      * @see phpQueryObject::_next()
      */
-    public function next($cssSelector = null)
+    public function next($cssSelector = null): void
     {
         $this->valid = isset($this->elementsInterator[$this->current + 1]);
         if (!$this->valid && $this->elementsInterator) {
@@ -2720,11 +2717,11 @@ class phpQueryObject implements Iterator, Countable, ArrayAccess
         } elseif ($this->valid) {
             $this->current++;
         } else {
-            return $this->_next($cssSelector);
+            $this->_next($cssSelector);
         }
     }
 
-    public function valid()
+    public function valid(): bool
     {
         return $this->valid;
     }
@@ -2732,29 +2729,28 @@ class phpQueryObject implements Iterator, Countable, ArrayAccess
     // ITERATOR INTERFACE END
     // ARRAYACCESS INTERFACE
 
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         return $this->find($offset)->size() > 0;
     }
 
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         return $this->find($offset);
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         //		$this->find($offset)->replaceWith($value);
         $this->find($offset)->html($value);
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         // empty
         throw new Exception("Can't do unset, use array interface only for calling queries and replacing HTML.");
     }
 
-    // ARRAYACCESS INTERFACE END
     /**
      * Returns node's XPath.
      *
