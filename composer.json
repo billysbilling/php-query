@@ -6,10 +6,15 @@
     "homepage": "https://github.com/billysbilling/phpQuery",
     "license": "Mit",
     "require": {
-        "php": ">=5.3.0"
+        "php": ">=8.1.0",
+        "ext-dom": "20031129",
+        "laminas/laminas-http": "^2.15",
+        "laminas/laminas-json": "^3.3",
+        "friendsofphp/php-cs-fixer": "^3.3",
+        "ext-mbstring": "*",
+        "ext-libxml": "*"
     },
     "autoload": {
         "classmap": ["src/"]
     }
 }
-

@@ -1,4 +1,4 @@
 phpQuery
 ========
 
-Copy of duvanmonsa/phpQuery, which under mysterious circumstances suddenly disappeared from the Internet.
+Copy of duvanmonsa/phpQuery with all parts removed which are not used in existing tests.
