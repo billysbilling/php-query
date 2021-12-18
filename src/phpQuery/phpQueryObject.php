@@ -2982,7 +2982,7 @@ class phpQueryObject
 	 * @see phpQueryObject::_next()
 	 * @return phpQueryObject|QueryTemplatesSource|QueryTemplatesParse|QueryTemplatesSourceQuery
 	 */
-	public function next($cssSelector = null): mixed {
+	public function next($cssSelector = null): void {
 //		if ($cssSelector || $this->valid)
 //			return $this->_next($cssSelector);
 		$this->valid = isset( $this->elementsInterator[ $this->current+1 ] )
@@ -2993,7 +2993,7 @@ class phpQueryObject
 		} else if ($this->valid) {
 			$this->current++;
 		} else {
-			return $this->_next($cssSelector);
+			$this->_next($cssSelector);
 		}
 	}
 	/**
