@@ -245,7 +245,6 @@ class phpQueryObject
 			->andSelf()
 			->not('form');
 		$return = array();
-//		$source->dumpDie();
 		foreach($source as $input) {
 			$input = phpQuery::pq($input);
 			if ($input->is('[disabled]'))
@@ -967,16 +966,18 @@ class phpQueryObject
 			break;
 			case 'parent':
 				$this->elements = $this->map(
-					create_function('$node', '
+					function($node) {
 						return $node instanceof DOMELEMENT && $node->childNodes->length
-							? $node : null;')
+							? $node : null;
+                    }
 				)->elements;
 			break;
 			case 'empty':
 				$this->elements = $this->map(
-					create_function('$node', '
+					function($node) {
 						return $node instanceof DOMELEMENT && $node->childNodes->length
-							? null : $node;')
+							? null : $node;
+                    }
 				)->elements;
 			break;
 			case 'disabled':
@@ -989,19 +990,20 @@ class phpQueryObject
 			break;
 			case 'enabled':
 				$this->elements = $this->map(
-					create_function('$node', '
-						return pq($node)->not(":disabled") ? $node : null;')
+					function($node) {
+						return pq($node)->not(":disabled") ? $node : null;
+                    }
 				)->elements;
 			break;
 			case 'header':
 				$this->elements = $this->map(
-					create_function('$node',
-						'$isHeader = isset($node->tagName) && in_array($node->tagName, array(
+					function($node) {
+						$isHeader = isset($node->tagName) && in_array($node->tagName, array(
 							"h1", "h2", "h3", "h4", "h5", "h6", "h7"
 						));
 						return $isHeader
 							? $node
-							: null;')
+							: null; }
 				)->elements;
 //				$this->elements = $this->map(
 //					create_function('$node', '$node = pq($node);
@@ -1018,18 +1020,18 @@ class phpQueryObject
 			break;
 			case 'only-child':
 				$this->elements = $this->map(
-					create_function('$node',
-						'return pq($node)->siblings()->size() == 0 ? $node : null;')
+					function($node) {
+						return pq($node)->siblings()->size() == 0 ? $node : null; }
 				)->elements;
 			break;
 			case 'first-child':
 				$this->elements = $this->map(
-					create_function('$node', 'return pq($node)->prevAll()->size() == 0 ? $node : null;')
+                    function($node) { return pq($node)->prevAll()->size() == 0 ? $node : null; }
 				)->elements;
 			break;
 			case 'last-child':
 				$this->elements = $this->map(
-					create_function('$node', 'return pq($node)->nextAll()->size() == 0 ? $node : null;')
+					function($node) { return pq($node)->nextAll()->size() == 0 ? $node : null; }
 				)->elements;
 			break;
 			case 'nth-child':
@@ -1041,46 +1043,49 @@ class phpQueryObject
 					$param = '1'.$param;
 				// :nth-child(index/even/odd/equation)
 				if ($param == 'even' || $param == 'odd')
-					$mapped = $this->map(
-						create_function('$node, $param',
-							'$index = pq($node)->prevAll()->size()+1;
+					$mapped = $this->map(function ($node, $param) {
+							$index = (int) pq($node)->prevAll()->size()+1;
 							if ($param == "even" && ($index%2) == 0)
 								return $node;
 							else if ($param == "odd" && $index%2 == 1)
 								return $node;
 							else
-								return null;'),
+								return null;
+                        },
 						new CallbackParam(), $param
 					);
 				else if (mb_strlen($param) > 1 && $param[1] == 'n')
 					// an+b
-					$mapped = $this->map(
-						create_function('$node, $param',
-							'$prevs = pq($node)->prevAll()->size();
-							$index = 1+$prevs;
-							$b = mb_strlen($param) > 3
-								? $param[3]
-								: 0;
-							$a = $param[0];
-							if ($b && $param[2] == "-")
-								$b = -$b;
-							if ($a > 0) {
-								return ($index-$b)%$a == 0
-									? $node
-									: null;
-								phpQuery::debug($a."*".floor($index/$a)."+$b-1 == ".($a*floor($index/$a)+$b-1)." ?= $prevs");
-								return $a*floor($index/$a)+$b-1 == $prevs
-										? $node
-										: null;
-							} else if ($a == 0)
-								return $index == $b
-										? $node
-										: null;
-							else
-								// negative value
-								return $index <= $b
-										? $node
-										: null;
+					$mapped = $this->map(function($node , $param) {
+                        $prevs = (int) pq($node)->prevAll()->size();
+                        $index = 1 + $prevs;
+                        $b = mb_strlen($param) > 3
+                            ? $param[3]
+                            : 0;
+                        $a = $param[0];
+                        if ($b && $param[2] == "-") {
+                            $b = -$b;
+                        }
+                        if ($a > 0) {
+                            return ($index - $b) % $a == 0
+                                ? $node
+                                : null;
+                            phpQuery::debug($a . "*" . floor($index / $a) . "+$b-1 == " . ($a * floor($index / $a) + $b - 1) . " ?= $prevs");
+                            return $a * floor($index / $a) + $b - 1 == $prevs
+                                ? $node
+                                : null;
+                        } else {
+                            if ($a == 0) {
+                                return $index == $b
+                                    ? $node
+                                    : null;
+                            } else // negative value
+                            {
+                                return $index <= $b
+                                    ? $node
+                                    : null;
+                            }
+                        }
 //							if (! $b)
 //								return $index%$a == 0
 //									? $node
@@ -1089,20 +1094,20 @@ class phpQueryObject
 //								return ($index-$b)%$a == 0
 //									? $node
 //									: null;
-							'),
+                    },
 						new CallbackParam(), $param
 					);
 				else
 					// index
-					$mapped = $this->map(
-						create_function('$node, $index',
-							'$prevs = pq($node)->prevAll()->size();
+					$mapped = $this->map(function ($node, $index) {
+							$prevs = pq($node)->prevAll()->size();
 							if ($prevs && $prevs == $index-1)
 								return $node;
 							else if (! $prevs && $index == 1)
 								return $node;
 							else
-								return null;'),
+								return null;
+                        },
 						new CallbackParam(), $param
 					);
 				$this->elements = $mapped->elements;
@@ -1110,12 +1115,6 @@ class phpQueryObject
 			default:
 				$this->debug("Unknown pseudoclass '{$class}', skipping...");
 		}
-	}
-	/**
-	 * @access private
-	 */
-	protected function __pseudoClassParam($paramsString) {
-		// TODO;
 	}
 	/**
 	 * Enter description here...
@@ -1340,7 +1339,7 @@ class phpQueryObject
 			'type' => $data ? 'POST' : 'GET',
 			'data' => $data,
 			'complete' => $callback,
-			'success' => array($this, '__loadSuccess')
+			'success' => array($this, 'loadSuccess')
 		);
 		phpQuery::ajax($ajax);
 		return $this;
@@ -1350,7 +1349,7 @@ class phpQueryObject
 	 * @param $html
 	 * @return unknown_type
 	 */
-	public function __loadSuccess($html) {
+	public function loadSuccess($html) {
 		if ($this->_loadSelector) {
 			$html = phpQuery::newDocument($html)->find($this->_loadSelector);
 			unset($this->_loadSelector);
@@ -1482,7 +1481,7 @@ class phpQueryObject
 	 * @return phpQueryObject|QueryTemplatesSource|QueryTemplatesParse|QueryTemplatesSourceQuery
 	 */
 	public function wrapAllOld($wrapper) {
-		$wrapper = pq($wrapper)->_clone();
+		$wrapper = pq($wrapper)->clone();
 		if (! $wrapper->length() || ! $this->length() )
 			return $this;
 		$wrapper->insertBefore($this->elements[0]);
@@ -1505,7 +1504,7 @@ class phpQueryObject
 		return phpQuery::pq($wrapper, $this->getDocumentID())
 			->clone()
 			->insertBefore($this->get(0))
-			->map(array($this, '___wrapAllCallback'))
+			->map(array($this, 'wrapAllCallback'))
 			->append($this);
 	}
   /**
@@ -1514,7 +1513,7 @@ class phpQueryObject
 	 * @return unknown_type
 	 * @access private
    */
-	public function ___wrapAllCallback($node) {
+	public function wrapAllCallback($node) {
 		$deepest = $node;
 		while($deepest->firstChild && $deepest->firstChild instanceof DOMELEMENT)
 			$deepest = $deepest->firstChild;
@@ -1691,7 +1690,7 @@ class phpQueryObject
 	 * @return phpQueryObject|QueryTemplatesSource|QueryTemplatesParse|QueryTemplatesSourceQuery
 	 * @access private
 	 */
-	public function _clone() {
+	public function clone() {
 		$newStack = array();
 		//pr(array('copy... ', $this->whois()));
 		//$this->dumpHistory('copy');
@@ -1730,7 +1729,7 @@ class phpQueryObject
 	public function replaceAll($selector) {
 		foreach(phpQuery::pq($selector, $this->getDocumentID()) as $node)
 			phpQuery::pq($node, $this->getDocumentID())
-				->after($this->_clone())
+				->after($this->clone())
 				->remove();
 		return $this;
 	}
@@ -1864,7 +1863,7 @@ class phpQueryObject
 		$args = func_get_args();
 		return call_user_func_array(array($this, 'htmlOuter'), $args);
 	}
-	public function __toString() {
+	public function toString() {
 		return $this->markupOuter();
 	}
 	/**
@@ -2228,7 +2227,7 @@ class phpQueryObject
 //		if ($start > $last)
 //			return array();
 		if ($end > 0)
-			$end = $end-$start;
+			$end = (int) $end - (int) $start;
 		return $this->newInstance(
 			array_slice($this->elements, $start, $end)
 		);
@@ -2282,7 +2281,7 @@ class phpQueryObject
 	 * @return unknown_type
 	 */
 	public static function extend($class, $file = null) {
-		return $this->plugin($class, $file);
+		return static::plugin($class, $file);
 	}
 	/**
 	 *
@@ -2727,7 +2726,6 @@ class phpQueryObject
 					}
 					foreach($node['option']->stack(1) as $option) {
 						$option = pq($option, $this->getDocumentID());
-						$selected = false;
 						// XXX: workaround for string comparsion, see issue #96
 						// http://code.google.com/p/phpquery/issues/detail?id=96
 						$selected = is_null($option->attr('value'))
@@ -2949,7 +2947,7 @@ class phpQueryObject
 	/**
    * @access private
 	 */
-	public function rewind(){
+	public function rewind(): void{
 		$this->debug('iterating foreach');
 //		phpQuery::selectDocument($this->getDocumentID());
 		$this->elementsBackup = $this->elements;
@@ -2964,13 +2962,13 @@ class phpQueryObject
 	/**
    * @access private
 	 */
-	public function current(){
+	public function current(): mixed {
 		return $this->elementsInterator[ $this->current ];
 	}
 	/**
    * @access private
 	 */
-	public function key(){
+	public function key(): mixed{
 		return $this->current;
 	}
 	/**
@@ -2984,7 +2982,7 @@ class phpQueryObject
 	 * @see phpQueryObject::_next()
 	 * @return phpQueryObject|QueryTemplatesSource|QueryTemplatesParse|QueryTemplatesSourceQuery
 	 */
-	public function next($cssSelector = null){
+	public function next($cssSelector = null): mixed {
 //		if ($cssSelector || $this->valid)
 //			return $this->_next($cssSelector);
 		$this->valid = isset( $this->elementsInterator[ $this->current+1 ] )
@@ -3001,7 +2999,7 @@ class phpQueryObject
 	/**
    * @access private
 	 */
-	public function valid(){
+	public function valid(): bool{
 		return $this->valid;
 	}
 	// ITERATOR INTERFACE END
@@ -3009,26 +3007,26 @@ class phpQueryObject
 	/**
    * @access private
 	 */
-	public function offsetExists($offset) {
+	public function offsetExists($offset): bool {
 		return $this->find($offset)->size() > 0;
 	}
 	/**
    * @access private
 	 */
-	public function offsetGet($offset) {
+	public function offsetGet($offset): mixed {
 		return $this->find($offset);
 	}
 	/**
    * @access private
 	 */
-	public function offsetSet($offset, $value) {
+	public function offsetSet($offset, $value): void {
 //		$this->find($offset)->replaceWith($value);
 		$this->find($offset)->html($value);
 	}
 	/**
    * @access private
 	 */
-	public function offsetUnset($offset) {
+	public function offsetUnset($offset): void {
 		// empty
 		throw new Exception("Can't do unset, use array interface only for calling queries and replacing HTML.");
 	}
@@ -3041,7 +3039,8 @@ class phpQueryObject
 	 * @TODO use native getNodePath is avaible
 	 * @access private
 	 */
-	protected function getNodeXpath($oneNode = null, $namespace = null) {
+	protected function getNodeXpath($oneNode = null, $namespace = null): array|string
+    {
 		$return = array();
 		$loop = $oneNode
 			? array($oneNode)
@@ -3090,7 +3089,7 @@ class phpQueryObject
 					.($node->getAttribute('id')
 						? '#'.$node->getAttribute('id'):'')
 					.($node->getAttribute('class')
-						? '.'.join('.', split(' ', $node->getAttribute('class'))):'')
+						? '.'.join('.', preg_split(' ', $node->getAttribute('class'))):'')
 					.($node->getAttribute('name')
 						? '[name="'.$node->getAttribute('name').'"]':'')
 					.($node->getAttribute('value') && strpos($node->getAttribute('value'), '<'.'?php') === false
@@ -3145,34 +3144,34 @@ class phpQueryObject
 		phpQuery::$debug = $debug;
 		return $this;
 	}
-	public function dumpTree($html = true, $title = true) {
+	public function dumpTree($html = true, $title = true): string {
 		$output = $title
 			? 'DUMP #'.(phpQuery::$dumpCount++)." \n" : '';
 		$debug = phpQuery::$debug;
 		phpQuery::$debug = false;
 		foreach($this->stack() as $node)
-			$output .= $this->__dumpTree($node);
+			$output .= $this->dumpTree2($node);
 		phpQuery::$debug = $debug;
 		print $html
 			? nl2br(str_replace(' ', '&nbsp;', $output))
 			: $output;
 		return $this;
 	}
-	private function __dumpTree($node, $intend = 0) {
+	private function dumpTree2($node, $intend = 0): string {
 		$whois = $this->whois($node);
 		$return = '';
 		if ($whois)
 			$return .= str_repeat(' - ', $intend).$whois."\n";
 		if (isset($node->childNodes))
 			foreach($node->childNodes as $chNode)
-				$return .= $this->__dumpTree($chNode, $intend+1);
+				$return .= $this->dumpTree($chNode, $intend+1);
 		return $return;
 	}
 	/**
 	 * Dump htmlOuter and stop script execution. Usefull for debugging.
 	 *
 	 */
-	public function dumpDie() {
+	public function dd() {
 		print __FILE__.':'.__LINE__;
 		var_dump($this->htmlOuter());
 		die();
