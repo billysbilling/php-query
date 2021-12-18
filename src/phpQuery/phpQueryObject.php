@@ -1665,7 +1665,7 @@ class phpQueryObject
 	public function length() {
 		return $this->size();
 	}
-	public function count() {
+	public function count(): int {
 		return $this->size();
 	}
 	/**
