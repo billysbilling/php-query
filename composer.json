@@ -6,7 +6,7 @@
     "homepage": "https://github.com/billysbilling/phpQuery",
     "license": "Mit",
     "require": {
-        "php": ">=8.1"
+        "php": ">=8.0"
     },
     "autoload": {
         "classmap": ["src/"]
